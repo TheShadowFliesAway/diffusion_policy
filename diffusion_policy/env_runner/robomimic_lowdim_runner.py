@@ -30,6 +30,12 @@ def _sanitize_env_meta(env_meta):
     env_kwargs = sanitized.setdefault('env_kwargs', dict())
     controller_configs = env_kwargs.get('controller_configs')
     if isinstance(controller_configs, dict):
+        if controller_configs.get('type') == 'BASIC':
+            body_parts = controller_configs.get('body_parts', dict())
+            right_cfg = body_parts.get('right')
+            if isinstance(right_cfg, dict):
+                controller_configs = copy.deepcopy(right_cfg)
+                env_kwargs['controller_configs'] = controller_configs
         # Older robomimic datasets may omit newer robosuite controller keys.
         controller_configs.setdefault('interpolation', None)
     return sanitized
