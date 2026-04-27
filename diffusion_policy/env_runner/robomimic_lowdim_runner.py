@@ -64,6 +64,7 @@ class RobomimicLowdimRunner(BaseLowdimRunner):
             crf=22,
             past_action=False,
             abs_action=False,
+            lite_physics=None,
             tqdm_interval_sec=5.0,
             n_envs=None
         ):
@@ -104,6 +105,8 @@ class RobomimicLowdimRunner(BaseLowdimRunner):
         # read from dataset
         env_meta = FileUtils.get_env_metadata_from_dataset(
             dataset_path)
+        if lite_physics is not None:
+            env_meta.setdefault('env_kwargs', dict())['lite_physics'] = lite_physics
         rotation_transformer = None
         if abs_action:
             env_meta['env_kwargs']['controller_configs']['control_delta'] = False
