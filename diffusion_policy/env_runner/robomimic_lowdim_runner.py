@@ -1,4 +1,5 @@
 import os
+import copy
 import wandb
 import numpy as np
 import torch
@@ -27,15 +28,29 @@ import robomimic.utils.obs_utils as ObsUtils
 def create_env(env_meta, obs_keys):
     ObsUtils.initialize_obs_modality_mapping_from_dict(
         {'low_dim': obs_keys})
-    env = EnvUtils.create_env_from_metadata(
-        env_meta=env_meta,
-        render=False, 
-        # only way to not show collision geometry
-        # is to enable render_offscreen
-        # which uses a lot of RAM.
-        render_offscreen=False,
-        use_image_obs=False, 
-    )
+    try:
+        env = EnvUtils.create_env_from_metadata(
+            env_meta=env_meta,
+            render=False, 
+            # only way to not show collision geometry
+            # is to enable render_offscreen
+            # which uses a lot of RAM.
+            render_offscreen=False,
+            use_image_obs=False, 
+        )
+    except TypeError as e:
+        env_kwargs = env_meta.get('env_kwargs', dict())
+        if ('lite_physics' not in str(e)) or ('lite_physics' not in env_kwargs):
+            raise
+        sanitized_env_meta = copy.deepcopy(env_meta)
+        sanitized_env_meta['env_kwargs'].pop('lite_physics', None)
+        print('Robosuite does not support lite_physics; retrying without it.')
+        env = EnvUtils.create_env_from_metadata(
+            env_meta=sanitized_env_meta,
+            render=False,
+            render_offscreen=False,
+            use_image_obs=False,
+        )
     return env
 
 

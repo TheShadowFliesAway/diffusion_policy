@@ -1,4 +1,5 @@
 import os
+import copy
 import wandb
 import numpy as np
 import torch
@@ -30,12 +31,26 @@ def create_env(env_meta, shape_meta, enable_render=True):
         modality_mapping[attr.get('type', 'low_dim')].append(key)
     ObsUtils.initialize_obs_modality_mapping_from_dict(modality_mapping)
 
-    env = EnvUtils.create_env_from_metadata(
-        env_meta=env_meta,
-        render=False, 
-        render_offscreen=enable_render,
-        use_image_obs=enable_render, 
-    )
+    try:
+        env = EnvUtils.create_env_from_metadata(
+            env_meta=env_meta,
+            render=False, 
+            render_offscreen=enable_render,
+            use_image_obs=enable_render, 
+        )
+    except TypeError as e:
+        env_kwargs = env_meta.get('env_kwargs', dict())
+        if ('lite_physics' not in str(e)) or ('lite_physics' not in env_kwargs):
+            raise
+        sanitized_env_meta = copy.deepcopy(env_meta)
+        sanitized_env_meta['env_kwargs'].pop('lite_physics', None)
+        print('Robosuite does not support lite_physics; retrying without it.')
+        env = EnvUtils.create_env_from_metadata(
+            env_meta=sanitized_env_meta,
+            render=False,
+            render_offscreen=enable_render,
+            use_image_obs=enable_render,
+        )
     return env
 
 
