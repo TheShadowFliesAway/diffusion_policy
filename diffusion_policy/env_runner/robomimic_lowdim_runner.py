@@ -25,9 +25,20 @@ import robomimic.utils.env_utils as EnvUtils
 import robomimic.utils.obs_utils as ObsUtils
 
 
+def _sanitize_env_meta(env_meta):
+    sanitized = copy.deepcopy(env_meta)
+    env_kwargs = sanitized.setdefault('env_kwargs', dict())
+    controller_configs = env_kwargs.get('controller_configs')
+    if isinstance(controller_configs, dict):
+        # Older robomimic datasets may omit newer robosuite controller keys.
+        controller_configs.setdefault('interpolation', None)
+    return sanitized
+
+
 def create_env(env_meta, obs_keys):
     ObsUtils.initialize_obs_modality_mapping_from_dict(
         {'low_dim': obs_keys})
+    env_meta = _sanitize_env_meta(env_meta)
     try:
         env = EnvUtils.create_env_from_metadata(
             env_meta=env_meta,
